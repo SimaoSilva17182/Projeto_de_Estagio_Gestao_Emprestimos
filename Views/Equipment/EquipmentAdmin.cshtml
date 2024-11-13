@@ -1,0 +1,227 @@
+﻿@model ProjectEstagio.Models.EquipmentAdminViewModel
+@{
+    ViewData["Title"] = "Administração de Equipamentos";
+    ViewData["ShowSecondNavbar"] = true;
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul>
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+<h2>Administração de Equipamentos</h2>
+
+<!-- Seção para Criar Novo Equipamento -->
+<div class="container mt-4">
+    <h3>Criar Novo Equipamento</h3>
+    <form asp-action="CreateEquipment" method="post" class="mt-2">
+        <div class="form-group">
+            <label for="equipmentName">Nome do Equipamento</label>
+            <input type="text" id="equipmentName" name="name" class="form-control" required />
+        </div>
+        <div class="form-group mt-2">
+            <label for="equipmentDescription">Descrição do Equipamento</label>
+            <input type="text" id="equipmentType" name="type" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Criar Equipamento</button>
+    </form>
+
+    <!-- Seção para Listar e Remover Equipamentos -->
+    <h3 class="mt-5">Equipamentos Existentes</h3>
+    <ul class="list-group mt-3">
+        @foreach (var equipment in Model.Equipments)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                @equipment.Name - @equipment.Type
+                <button type="button"
+                        class="btn btn-danger btn-sm delete-button"
+                        data-id="@equipment.Id"
+                        data-name="@equipment.Name"
+                        data-type="@equipment.Type"
+                        data-item="equipment"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal">
+                    Remover
+                </button>
+            </li>
+        }
+    </ul>
+
+    <!-- Modal de Confirmação para Equipamentos -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza de que deseja excluir o equipamento <strong id="itemToDelete"></strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="confirmDeleteButton" class="btn btn-danger">Sim, Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção para Requisitar Equipamento -->
+    <h3 class="mt-5">Requisitar Equipamento</h3>
+    <form asp-action="CreateEquipmentRequestAdmin" method="post" class="mt-4">
+        <div class="form-group">
+            <label for="EquipmentRequestId" class="control-label">Equipamento</label>
+            <select id="EquipmentRequestId" name="EquipmentRequest.EquipmentId" class="form-control" asp-items="Model.EquipmentRequest.Equipments">
+                <option value="">Selecione um equipamento...</option>
+            </select>
+            <span asp-validation-for="EquipmentRequest.EquipmentId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mt-3">
+            <label for="EquipmentRequestDate" class="control-label">Data</label>
+            <input id="EquipmentRequestDate" name="EquipmentRequest.Date" class="form-control" type="date" />
+            <span asp-validation-for="EquipmentRequest.Date" class="text-danger"></span>
+        </div>
+
+        <!-- Campo de Data Final -->
+        <div class="form-group mt-3">
+            <label for="EquipmentRequestEndDate" class="control-label">Data Final</label>
+            <input id="EquipmentRequestEndDate" name="EquipmentRequest.EndDate" class="form-control" type="date" />
+            <span asp-validation-for="EquipmentRequest.EndDate" class="text-danger"></span>
+        </div>
+
+        <div class="form-group d-flex align-items-center mt-3">
+            <div class="me-2">
+                <label for="EquipmentRequestStartTime" class="control-label">Hora de Início</label>
+                <select id="EquipmentRequestStartTime" name="EquipmentRequest.StartTime" class="form-select" onchange="updateEndTimeOptions(); updateSelectedTime();">
+                    <option value="">Selecione...</option>
+                    @for (var hour = 9; hour <= 17; hour++)
+                    {
+                        var minutes = new[] { "00", "30" };
+                        foreach (var minute in minutes)
+                        {
+                            var time = $"{hour:D2}:{minute}";
+                            <option value="@time">@time</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="EquipmentRequest.StartTime" class="text-danger"></span>
+            </div>
+
+            <div class="me-2">
+                <label for="EquipmentRequestEndTime" class="control-label">Hora de Término</label>
+                <select id="EquipmentRequestEndTime" name="EquipmentRequest.EndTime" class="form-select">
+                    <option value="">Selecione...</option>
+                    <!-- As opções de hora de término serão geradas pelo JavaScript -->
+                </select>
+                <span asp-validation-for="EquipmentRequest.EndTime" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary">Submeter Pedido</button>
+            <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Data atual para requisição de equipamento
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            document.getElementById("EquipmentRequestDate").value = formattedToday;
+            document.getElementById("EquipmentRequestEndDate").value = formattedToday;
+
+            // Evento para seleção de equipamento
+            const equipmentSelect = document.getElementById('EquipmentRequestId');
+            equipmentSelect.addEventListener('change', function () {
+                const selectedEquipmentId = this.value;
+                document.getElementById('selectedEquipmentId').innerText = 'EquipmentId Selecionado: ' + selectedEquipmentId;
+            });
+
+            // Configuração do modal de exclusão
+            let itemId;
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    itemId = this.getAttribute('data-id');
+                    const itemName = this.getAttribute('data-name');
+                    const itemType = this.getAttribute('data-type');
+                    document.getElementById('itemToDelete').textContent = `${itemName} - Tipo: ${itemType}`;
+                });
+            });
+
+            // Confirmação de exclusão
+            document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/Equipment/DeleteEquipment';
+
+                const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const csrfField = document.createElement('input');
+                csrfField.type = 'hidden';
+                csrfField.name = '__RequestVerificationToken';
+                csrfField.value = csrfToken;
+                form.appendChild(csrfField);
+
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'id';
+                hiddenField.value = itemId;
+                form.appendChild(hiddenField);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+        });
+
+        // Funções para atualização de horário
+        function updateEndTimeOptions() {
+            var startTime = document.getElementById('EquipmentRequestStartTime').value;
+            var endTimeSelect = document.getElementById('EquipmentRequestEndTime');
+            endTimeSelect.innerHTML = '<option value="">Selecione...</option>';
+
+            if (startTime) {
+                var [startHour, startMinute] = startTime.split(':').map(Number);
+                var firstPossibleEndHour = (startMinute === 0) ? startHour + 1 : startHour + 1;
+
+                if (firstPossibleEndHour === 18) {
+                    firstPossibleEndHour = 18;
+                }
+
+                for (var hour = firstPossibleEndHour; hour <= 18; hour++) {
+                    var minutes = ["00", "30"];
+                    for (var minute of minutes) {
+                        if (hour === 18 && minute === "30") continue;
+                        var time = `${hour}:${minute}`;
+                        endTimeSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                    }
+                }
+            }
+        }
+
+        function updateSelectedTime() {
+            var startTime = document.getElementById('EquipmentRequestStartTime').value;
+            var endTime = document.getElementById('EquipmentRequestEndTime').value;
+            var displayArea = document.getElementById('selectedTime');
+
+            if (startTime && endTime) {
+                displayArea.innerHTML = `Intervalo Selecionado: ${startTime} até ${endTime}`;
+            } else {
+                displayArea.innerHTML = '';
+            }
+        }
+    </script>
+}
+

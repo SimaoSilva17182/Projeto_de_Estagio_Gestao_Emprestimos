@@ -1,0 +1,132 @@
+﻿@model ProjectEstagio.Models.EquipmentRequestViewModel
+
+@{
+    ViewData["Title"] = "Requisitar Equipamento";
+    ViewData["ShowSecondNavbar"] = true;
+}
+
+<h2>Requisitar Equipamento</h2>
+
+<form asp-action="CreateEquipmentRequest" method="post" class="mt-4">
+    <div class="form-group">
+        <label asp-for="EquipmentId" class="control-label">Equipamento</label>
+        <select asp-for="EquipmentId" class="form-control" asp-items="Model.Equipments">
+            <option value="">Selecione um equipamento...</option>
+        </select>
+        <span asp-validation-for="EquipmentId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <label asp-for="Date" class="control-label">Data</label>
+        <input asp-for="Date" class="form-control" type="date" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <!-- Campo de Data Final -->
+    <div class="form-group mt-3">
+        <label asp-for="EndDate" class="control-label">Data Final</label>
+        <input asp-for="EndDate" class="form-control" type="date" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group d-flex align-items-center mt-3">
+        <div class="me-2">
+            <label asp-for="StartTime" class="control-label">Hora de Início</label>
+            <select asp-for="StartTime" class="form-select" id="startTime" onchange="updateEndTimeOptions(); updateSelectedTime();">
+                <option value="">Selecione...</option>
+                @for (var hour = 9; hour <= 17; hour++)
+                {
+                    var minutes = new[] { "00", "30" };
+                    foreach (var minute in minutes)
+                    {
+                        var time = $"{hour:D2}:{minute}";
+                        <option value="@time">@time</option>
+                    }
+                }
+            </select>
+            <span asp-validation-for="StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="me-2">
+            <label asp-for="EndTime" class="control-label">Hora de Término</label>
+            <select asp-for="EndTime" class="form-select" id="endTime">
+                <option value="">Selecione...</option>
+            </select>
+            <span asp-validation-for="EndTime" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <button type="submit" class="btn btn-primary">Submeter Pedido</button>
+        <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Cria um novo objeto Date para obter a data atual
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            // Formata a data no formato YYYY-MM-DD
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            // Define os valores dos campos de data
+            document.getElementById("Date").value = formattedToday;
+            document.getElementById("EndDate").value = formattedToday;
+
+            // Exibe popup se houver erros no ModelState
+        @if (!ViewData.ModelState.IsValid)
+        {
+            // Combina as mensagens de erro em uma única string com \n para novas linhas e escapa corretamente para o JavaScript
+            var errorMessage = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(string.Join("\n", ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            <text>
+                    alert(@errorMessage);
+            </text>
+        }
+                });
+
+        function updateEndTimeOptions() {
+            var startTime = document.getElementById('startTime').value;
+            var endTimeSelect = document.getElementById('endTime');
+            endTimeSelect.innerHTML = '<option value="">Selecione...</option>'; // Limpa opções existentes
+
+            if (startTime) {
+                var [startHour, startMinute] = startTime.split(':').map(Number);
+                // Calcula a primeira hora de término possível
+                var firstPossibleEndHour = (startMinute === 0) ? startHour + 1 : startHour + 1;
+
+                // Ajusta para garantir que a primeira hora de término seja válida
+                if (firstPossibleEndHour === 18) {
+                    firstPossibleEndHour = 18; // Permite 18:00, mas não 18:30
+                }
+
+                // Adiciona as opções de término
+                for (var hour = firstPossibleEndHour; hour <= 18; hour++) {
+                    var minutes = ["00", "30"];
+                    for (var minute of minutes) {
+                        // Evitar adicionar 18:30
+                        if (hour === 18 && minute === "30") {
+                            continue;
+                        }
+                        var time = `${hour}:${minute}`;
+                        endTimeSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                    }
+                }
+            }
+        }
+
+        function updateSelectedTime() {
+            var startTime = document.getElementById('startTime').value;
+            var endTime = document.getElementById('endTime').value;
+            var displayArea = document.getElementById('selectedTime');
+
+            if (startTime && endTime) {
+                displayArea.innerHTML = `Intervalo Selecionado: ${startTime} até ${endTime}`;
+            } else {
+                displayArea.innerHTML = '';
+            }
+        }
+    </script>
+}

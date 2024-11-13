@@ -1,0 +1,187 @@
+﻿@model ProjectEstagio.Models.VeiculeRequestViewModel
+
+@{
+    ViewData["Title"] = "Requisitar Veículo";
+    ViewData["ShowSecondNavbar"] = true;
+}
+
+<h2>Requisitar Veículo</h2>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p>@error.ErrorMessage</p>
+        }
+    </div>
+}
+
+<form asp-action="CreateVeiculeRequest" method="post" class="mt-4">
+    <div class="form-group">
+        <label asp-for="VeiculeId" class="control-label">Veículo</label>
+        <select asp-for="VeiculeId" class="form-control" asp-items="Model.Veicules">
+            <option value="">Selecione um veículo...</option>
+        </select>
+        <span asp-validation-for="VeiculeId" class="text-danger"></span>
+    </div>
+
+    <!-- Exibir o tipo do veículo -->
+    <div class="form-group mt-3" id="veiculeTypeSection">
+        <label asp-for="VeiculeType" class="control-label">Tipo de Veículo</label>
+        <input asp-for="VeiculeType" class="form-control" readonly />
+    </div>
+
+    <!-- Campo de Motorista, visível apenas para "carrinha" e "autocarro" -->
+    <div class="form-group mt-3" id="driverSection" style="display:none;">
+        <label asp-for="DriverId" class="control-label">Motorista (Necessário para carrinhas ou autocarros)</label>
+        <select asp-for="DriverId" class="form-control" asp-items="Model.Drivers">
+            <option value="">Selecione um motorista...</option>
+        </select>
+        <span asp-validation-for="DriverId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <label asp-for="Date" class="control-label">Data Inicial</label>
+        <input asp-for="Date" class="form-control" type="date" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <!-- Campo de Data Final -->
+    <div class="form-group mt-3">
+        <label asp-for="EndDate" class="control-label">Data Final</label>
+        <input asp-for="EndDate" class="form-control" type="date" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group d-flex align-items-center mt-3">
+        <div class="me-2">
+            <label asp-for="StartTime" class="control-label">Hora de Início</label>
+            <select asp-for="StartTime" class="form-select" id="startTime" onchange="updateEndTimeOptions(); updateSelectedTime();">
+                <option value="">Selecione...</option>
+                @for (var hour = 9; hour <= 17; hour++)
+                {
+                    var minutes = new[] { "00", "30" };
+                    foreach (var minute in minutes)
+                    {
+                        var time = $"{hour:D2}:{minute}";
+                        <option value="@time">@time</option>
+                    }
+                }
+            </select>
+            <span asp-validation-for="StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="me-2">
+            <label asp-for="EndTime" class="control-label">Hora de Término</label>
+            <select asp-for="EndTime" class="form-select" id="endTime">
+                <option value="">Selecione...</option>
+            </select>
+            <span asp-validation-for="EndTime" class="text-danger"></span>
+        </div>
+    </div>
+
+    <!--Campo de Descrição-->
+    <div class="form-group mt-3">
+        <label asp-for="Description" class="control-label">Descrição</label>
+        <textarea asp-for="Description" class="form-control" rows="3" maxlength="500" placeholder="Escreva aqui razão para a qual precisa do veículo..."></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex justify-content-between mt-4">
+        <button type="submit" class="btn btn-primary">Submeter Pedido</button>
+        <a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Define as datas de início e final com a data atual
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            document.getElementById("Date").value = formattedToday;
+            document.getElementById("EndDate").value = formattedToday;
+
+            const veiculeSelect = document.getElementById('VeiculeId');
+            const veiculeTypeInput = document.getElementById('VeiculeType');
+            const driverSection = document.getElementById('driverSection');
+
+
+
+            // Função para verificar o tipo de veículo com base no texto selecionado
+            function checkVeiculeType() {
+                const selectedOption = veiculeSelect.options[veiculeSelect.selectedIndex].text;
+
+                // Extraindo o tipo de veículo do texto selecionado
+                const veiculeTypeMatch = selectedOption.match(/Tipo:\s*(\w+)/);
+                if (veiculeTypeMatch && veiculeTypeMatch[1]) {
+                    veiculeTypeInput.value = veiculeTypeMatch[1]; // Preenche o campo de tipo de veículo
+                } else {
+                    veiculeTypeInput.value = ''; // Limpa o campo se não encontrar
+                }
+
+                // Verificar se o veículo é "carrinha" ou "autocarro" no próprio texto
+                if (selectedOption.toLowerCase().includes("carrinha") || selectedOption.toLowerCase().includes("autocarro")) {
+                    driverSection.style.display = 'block'; // Mostrar campo de motorista
+                } else {
+                    driverSection.style.display = 'none'; // Ocultar campo de motorista
+                }
+            }
+
+            // Adiciona um evento ao selecionar um veículo
+            veiculeSelect.addEventListener('change', checkVeiculeType);
+
+            // Executar a função uma vez no carregamento inicial, caso um veículo já esteja selecionado
+            checkVeiculeType();
+
+            // Função para atualizar as opções de hora de término com base na hora de início selecionada
+            function updateEndTimeOptions() {
+                const startTime = document.getElementById('startTime').value;
+                const endTimeSelect = document.getElementById('endTime');
+                endTimeSelect.innerHTML = '<option value="">Selecione...</option>'; // Limpa opções existentes
+
+                if (startTime) {
+                    const [startHour, startMinute] = startTime.split(':').map(Number);
+                    let firstPossibleEndHour = (startMinute === 0) ? startHour + 1 : startHour + 1;
+
+                    if (firstPossibleEndHour === 18) {
+                        firstPossibleEndHour = 18; // Permite 18:00, mas não 18:30
+                    }
+
+                    // Adiciona as opções de término
+                    for (let hour = firstPossibleEndHour; hour <= 18; hour++) {
+                        const minutes = ["00", "30"];
+                        for (const minute of minutes) {
+                            if (hour === 18 && minute === "30") {
+                                continue;
+                            }
+                            const time = `${hour}:${minute}`;
+                            endTimeSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                        }
+                    }
+                }
+            }
+
+            // Atualizar o intervalo de tempo selecionado para exibir na interface
+            function updateSelectedTime() {
+                const startTime = document.getElementById('startTime').value;
+                const endTime = document.getElementById('endTime').value;
+                const displayArea = document.getElementById('selectedTime');
+
+                if (startTime && endTime) {
+                    displayArea.innerHTML = `Intervalo Selecionado: ${startTime} até ${endTime}`;
+                } else {
+                    displayArea.innerHTML = '';
+                }
+            }
+
+            // Vincula a função de atualização das horas de término
+            document.getElementById('startTime').addEventListener('change', updateEndTimeOptions);
+            document.getElementById('endTime').addEventListener('change', updateSelectedTime);
+        });
+    </script>
+}

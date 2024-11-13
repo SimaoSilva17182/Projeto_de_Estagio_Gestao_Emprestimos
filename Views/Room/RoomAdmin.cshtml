@@ -1,0 +1,218 @@
+﻿@model ProjectEstagio.Models.RoomAdminViewModel
+@{
+    ViewData["Title"] = "Administração de Salas";
+    ViewData["ShowSecondNavbar"] = true;
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul>
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+<h2>Administração de Salas</h2>
+
+<!-- Seção para Criar Nova Sala -->
+<div class="container mt-4">
+    <h3>Criar Nova Sala</h3>
+    <form asp-action="CreateRoom" method="post" class="mt-2">
+        <div class="form-group">
+            <label for="roomName">Nome da Sala</label>
+            <input type="text" id="roomName" name="name" class="form-control" required />
+        </div>
+        <div class="form-group mt-2">
+            <label for="roomLocal">Local da Sala</label>
+            <input type="text" id="roomLocal" name="local" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Criar Sala</button>
+    </form>
+
+    <!-- Seção para Listar e Remover Salas -->
+    <h3 class="mt-5">Salas Existentes</h3>
+    <ul class="list-group mt-3">
+        @foreach (var room in Model.Rooms)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                @room.Name - @room.Local
+                <button type="button"
+                        class="btn btn-danger btn-sm delete-button"
+                        data-id="@room.Id"
+                        data-name="@room.Name"
+                        data-local="@room.Local"
+                        data-type="room"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal">
+                    Remover
+                </button>
+            </li>
+        }
+    </ul>
+
+    <!-- Modal de Confirmação para Salas -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza de que deseja excluir a sala <strong id="itemToDelete"></strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="confirmDeleteButton" class="btn btn-danger">Sim, Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção para Requisitar Sala -->
+    <h3 class="mt-5">Requisitar Sala</h3>
+    <form asp-action="CreateRoomRequestAdmin" method="post" class="mt-4">
+        <div class="form-group">
+            <label for="RoomRequestId" class="control-label">Sala</label>
+            <select id="RoomRequestId" name="RoomRequest.RoomId" class="form-control" asp-items="Model.RoomRequest.Rooms">
+                <option value="">Selecione uma sala...</option>
+            </select>
+            <span asp-validation-for="RoomRequest.RoomId" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mt-3">
+            <label for="RoomRequestDate" class="control-label">Data</label>
+            <input id="RoomRequestDate" name="RoomRequest.Date" class="form-control" type="date" />
+            <span asp-validation-for="RoomRequest.Date" class="text-danger"></span>
+        </div>
+
+        <div class="form-group d-flex align-items-center mt-3">
+            <div class="me-2">
+                <label for="RoomRequestStartTime" class="control-label">Hora de Início</label>
+                <select id="RoomRequestStartTime" name="RoomRequest.StartTime" class="form-select" onchange="updateEndTimeOptions(); updateSelectedTime();">
+                    <option value="">Selecione...</option>
+                    @for (var hour = 9; hour <= 17; hour++)
+                    {
+                        var minutes = new[] { "00", "30" };
+                        foreach (var minute in minutes)
+                        {
+                            var time = $"{hour:D2}:{minute}";
+                            <option value="@time">@time</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="RoomRequest.StartTime" class="text-danger"></span>
+            </div>
+
+            <div class="me-2">
+                <label for="RoomRequestEndTime" class="control-label">Hora de Término</label>
+                <select id="RoomRequestEndTime" name="RoomRequest.EndTime" class="form-select">
+                    <option value="">Selecione...</option>
+                    <!-- As opções de hora de término serão geradas pelo JavaScript -->
+                </select>
+                <span asp-validation-for="RoomRequest.EndTime" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-primary">Submeter Pedido</button>
+            <<a href="javascript:history.back()" class="btn btn-secondary">Voltar</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Data atual para requisição de sala
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            document.getElementById("RoomRequestDate").value = formattedToday;
+
+            // Evento para seleção de sala
+            const roomSelect = document.getElementById('RoomRequestId');
+            roomSelect.addEventListener('change', function () {
+                const selectedRoomId = this.value;
+                document.getElementById('selectedRoomId').innerText = 'RoomId Selecionado: ' + selectedRoomId;
+            });
+
+            // Configuração do modal de exclusão
+            let itemId;
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    itemId = this.getAttribute('data-id');
+                    const itemName = this.getAttribute('data-name');
+                    const itemLocal = this.getAttribute('data-local');
+                    document.getElementById('itemToDelete').textContent = `${itemName} - Local: ${itemLocal}`;
+                });
+            });
+
+            // Confirmação de exclusão
+            document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/Room/DeleteRoom';
+
+                const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const csrfField = document.createElement('input');
+                csrfField.type = 'hidden';
+                csrfField.name = '__RequestVerificationToken';
+                csrfField.value = csrfToken;
+                form.appendChild(csrfField);
+
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'id';
+                hiddenField.value = itemId;
+                form.appendChild(hiddenField);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+        });
+
+        // Funções para atualização de horário
+        function updateEndTimeOptions() {
+            var startTime = document.getElementById('RoomRequestStartTime').value;
+            var endTimeSelect = document.getElementById('RoomRequestEndTime');
+            endTimeSelect.innerHTML = '<option value="">Selecione...</option>';
+
+            if (startTime) {
+                var [startHour, startMinute] = startTime.split(':').map(Number);
+                var firstPossibleEndHour = (startMinute === 0) ? startHour + 1 : startHour + 1;
+
+                if (firstPossibleEndHour === 18) {
+                    firstPossibleEndHour = 18;
+                }
+
+                for (var hour = firstPossibleEndHour; hour <= 18; hour++) {
+                    var minutes = ["00", "30"];
+                    for (var minute of minutes) {
+                        if (hour === 18 && minute === "30") continue;
+                        var time = `${hour}:${minute}`;
+                        endTimeSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                    }
+                }
+            }
+        }
+
+        function updateSelectedTime() {
+            var startTime = document.getElementById('RoomRequestStartTime').value;
+            var endTime = document.getElementById('RoomRequestEndTime').value;
+            var displayArea = document.getElementById('selectedTime');
+
+            if (startTime && endTime) {
+                displayArea.innerHTML = `Intervalo Selecionado: ${startTime} até ${endTime}`;
+            } else {
+                displayArea.innerHTML = '';
+            }
+        }
+    </script>
+}

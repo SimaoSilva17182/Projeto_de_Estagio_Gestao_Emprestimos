@@ -1,0 +1,209 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ProjectEstágio</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ProjectEstágio.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-0">
+            <div class="container-fluid">
+                <img width="120px" height="70px" srcset="https://www.cm-castroverde.pt/util/imgLoader2.ashx?w=545&h=373&img=/upload_files/client_id_1/website_id_1/LOGO%20home/C_municipio.png"/>                               
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li>
+                            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Homepage</a>
+                        </li>
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+
+        @* Verifica se a ViewData["ShowSecondNavbar"] existe e é verdadeira *@
+        @if (ViewData["ShowSecondNavbar"] != null && (bool)ViewData["ShowSecondNavbar"])
+        {
+            <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-navbar p-0">
+                <div class="container-fluid">
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#requisitionNavbar" aria-controls="requisitionNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="requisitionNavbar">
+                        <ul class="navbar-nav mr-auto">
+
+                            @* Verifica se o usuário é Admin *@
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="vehicleDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Viatura
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="vehicleDropdown">
+                                        <li><a class="dropdown-item" asp-action="VeiculeAdmin" asp-controller="Veicule">Sala de Admintração</a></li>
+                                        <li><a class="dropdown-item" asp-action="VeiculeRequest" asp-controller="Veicule">Requisitar Viatura</a></li>
+                                        <li><a class="dropdown-item" asp-action="VeiculeAvailability" asp-controller="Veicule">Fazer Consulta</a></li>
+                                        <li><a class="dropdown-item" asp-action="MyVeiculeRequests" asp-controller="Veicule">Os Meus Pedidos</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="roomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Sala
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="roomDropdown">
+                                        <li><a class="dropdown-item" asp-action="RoomAdmin" asp-controller="Room">Sala de Admintração</a></li>
+                                        <li><a class="dropdown-item" asp-action="RoomRequest" asp-controller="Room">Requisitar Sala</a></li>
+                                        <li><a class="dropdown-item" asp-action="RoomAvailability" asp-controller="Room">Fazer Consulta</a></li>
+                                        <li><a class="dropdown-item" asp-action="MyRoomRequests" asp-controller="Room">Os Meus Pedidos</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="equipmentDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Equipamento
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="equipmentDropdown">
+                                        <li><a class="dropdown-item" asp-action="EquipmentAdmin" asp-controller="Equipment">Sala de Admintração</a></li>
+                                        <li><a class="dropdown-item" asp-action="EquipmentRequest" asp-controller="Equipment">Requisitar Equipamento</a></li>
+                                        <li><a class="dropdown-item" asp-action="EquipmentAvailability" asp-controller="Equipment">Fazer Consulta</a></li>
+                                        <li><a class="dropdown-item" asp-action="MyEquipmentRequests" asp-controller="Equipment">Os Meus Pedidos</a></li>
+                                    </ul>
+                                </li>
+                            }
+
+                            @* Verifica se o usuário é GestorSalas *@
+                            @if (User.IsInRole("GestorSalas"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="roomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Sala
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="roomDropdown">
+                                        <li><a class="dropdown-item" asp-action="RoomRequest" asp-controller="Room">Requisitar Sala</a></li>
+                                        <li><a class="dropdown-item" asp-action="RoomAvailability" asp-controller="Room">Fazer Consulta</a></li>
+                                        <li><a class="dropdown-item" asp-action="MyRoomRequests" asp-controller="Room">Os Meus Pedidos</a></li>
+                                    </ul>
+                                </li>
+
+                                @* Menu de Equipamentos com consulta apenas *@
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="equipmentDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Equipamento
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="equipmentDropdown">
+                                        <li><a class="dropdown-item" asp-action="EquipmentAvailability" asp-controller="Equipment">Fazer Consulta</a></li>
+                                    </ul>
+                                </li>
+                                @* Menu de Veiculos com consulta apenas *@
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="vehicleDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Viatura
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="vehicleDropdown">                                      
+                                        <li><a class="dropdown-item" asp-action="VeiculeAvailability" asp-controller="Veicule">Fazer Consulta</a></li>
+                                    </ul>
+                                </li>
+                            }
+
+                            @* Verifica se o usuário é GestorVeiculos *@
+                            @if (User.IsInRole("GestorVeiculos"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="vehicleDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Viatura
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="vehicleDropdown">
+                                        <li><a class="dropdown-item" asp-action="VeiculeRequest" asp-controller="Veicule">Requisitar Viatura</a></li>
+                                        <li><a class="dropdown-item" asp-action="VeiculeAvailability" asp-controller="Veicule">Fazer Consulta</a></li>
+                                        <li><a class="dropdown-item" asp-action="MyVeiculeRequests" asp-controller="Veicule">Os Meus Pedidos</a></li>
+                                    </ul>
+                                </li>
+                                @* Menu de Equipamentos com consulta apenas *@
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="equipmentDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Equipamento
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="equipmentDropdown">
+                                        <li><a class="dropdown-item" asp-action="EquipmentAvailability" asp-controller="Equipment">Fazer Consulta</a></li>
+                                    </ul>
+                                </li>
+                                @* Menu de Salas com consulta apenas *@
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="roomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Sala
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="roomDropdown">
+                                        <li><a class="dropdown-item" asp-action="RoomAvailability" asp-controller="Room">Fazer Consulta</a></li>
+                                    </ul>
+                                </li>
+
+                            }
+
+                            @* Verifica se o usuário é GestorEquipamentos *@
+                            @if (User.IsInRole("GestorEquipamentos"))
+                            {
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="equipmentDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Equipamento
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="equipmentDropdown">
+                                        <li><a class="dropdown-item" asp-action="EquipmentRequest" asp-controller="Equipment">Requisitar Equipamento</a></li>
+                                        <li><a class="dropdown-item" asp-action="EquipmentAvailability" asp-controller="Equipment">Fazer Consulta</a></li>
+                                        <li><a class="dropdown-item" asp-action="MyEquipmentRequests" asp-controller="Equipment">Os Meus Pedidos</a></li>
+
+                                    </ul>
+                                </li>
+                                @* Menu de Veiculos com consulta apenas *@
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="vehicleDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Viatura
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="vehicleDropdown">
+                                        <li><a class="dropdown-item" asp-action="VeiculeAvailability" asp-controller="Veicule">Fazer Consulta</a></li>
+                                    </ul>
+                                </li>
+                                @* Menu de Salas com consulta apenas *@
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="roomDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Requisitar Sala
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="roomDropdown">
+                                        <li><a class="dropdown-item" asp-action="RoomAvailability" asp-controller="Room">Fazer Consulta</a></li>
+                                    </ul>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        }
+
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted" >
+        <div class="container" >
+            &copy; 2024 - ProjectEstágio - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+

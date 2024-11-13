@@ -1,0 +1,145 @@
+﻿@model ProjectEstagio.Models.EquipmentRequestTabels
+@{
+    ViewData["Title"] = "Meus Pedidos";
+    ViewData["ShowSecondNavbar"] = true;
+    var isAdmin = User.IsInRole("Admin"); // Verifica se o usuário é administrador
+}
+
+<h2 class=" justify-content-center">@(isAdmin ? "Pedidos de Equipamentos" : "Meus Pedidos de Equipamentos")</h2>
+
+<h2>Pedidos Átivos</h2>
+
+<!-- Tabela de Pedidos Futuros -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>Equipamento</th>
+            <th>Data Inicial</th>
+            <th>Data Final</th>
+            <th>Hora de Início</th>
+            <th>Hora de Término</th>
+            @if (isAdmin)
+            {
+                <th>Usuário</th> <!-- Coluna adicional para o administrador -->
+            }
+            <td>Ações</td>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var request in Model.FutureRequests)
+        {
+            <tr>
+                <td>@request.Equipment.Name</td>
+                <td>@request.Date.ToString("dd/MM/yyyy")</td>
+                <td>@request.EndDate.ToString("dd/MM/yyyy")</td>
+                <td>@request.StartTime</td>
+                <td>@request.EndTime</td>
+                @if (isAdmin)
+                {
+                    <td>@request.User.UserName</td> <!-- Exibe o nome do usuário que fez o pedido -->
+                }
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm delete-request-button"
+                            data-id="@request.Id" data-name="@request.Equipment.Name" data-type="@request.Equipment.Type"
+                            data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                        Cancelar Pedido
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Histórico de Pedidos</h2>
+
+<!-- Tabela de Pedidos Passados (Histórico) -->
+<table class="table">
+    <thead>
+        <tr>
+            <th>Equipamento</th>
+            <th>Data Inicial</th>
+            <th>Data Final</th>
+            <th>Hora de Início</th>
+            <th>Hora de Término</th>
+            @if (isAdmin)
+            {
+                <th>Usuário</th> <!-- Coluna adicional para o administrador -->
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var request in Model.PastRequests)
+        {
+            <tr>
+                <td>@request.Equipment.Name</td>
+                <td>@request.Date.ToString("dd/MM/yyyy")</td>
+                <td>@request.EndDate.ToString("dd/MM/yyyy")</td>
+                <td>@request.StartTime</td>
+                <td>@request.EndTime</td>
+                @if (isAdmin)
+                {
+                    <td>@request.User.UserName</td> <!-- Exibe o nome do usuário que fez o pedido -->
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Tem certeza de que deseja cancelar o pedido para o equipamento <strong id="requestToDelete"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="confirmDeleteButton" class="btn btn-danger">Sim, Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let requestId;
+
+            document.querySelectorAll('.delete-request-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    requestId = this.getAttribute('data-id');
+                    const requestName = this.getAttribute('data-name');
+                    const requestType = this.getAttribute('data-type');
+
+                    document.getElementById('requestToDelete').textContent = `${requestName} (${requestType})`;
+                });
+            });
+
+            document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/Equipment/DeleteEquipmentRequest';
+
+                const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const csrfField = document.createElement('input');
+                csrfField.type = 'hidden';
+                csrfField.name = '__RequestVerificationToken';
+                csrfField.value = csrfToken;
+                form.appendChild(csrfField);
+
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'id';
+                hiddenField.value = requestId;
+                form.appendChild(hiddenField);
+
+                document.body.appendChild(form);
+                form.submit();
+            });
+        });
+    </script>
+}

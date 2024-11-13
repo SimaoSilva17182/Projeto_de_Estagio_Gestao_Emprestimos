@@ -1,0 +1,211 @@
+﻿@model ProjectEstagio.Models.VeiculeAdminViewModel
+@{
+    ViewData["Title"] = "Administração de Veículos";
+    ViewData["ShowSecondNavbar"] = true;
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <ul>
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+<h2>Administração de Veículos</h2>
+
+<!-- Seção para Criar Novo Veículo -->
+<div class="container mt-4">
+    <h3>Adicionar Veículo</h3>
+    <form asp-action="CreateVeicule" method="post" enctype="multipart/form-data" class="mt-2">
+        <div class="row">
+            <!-- Coluna para os campos de texto -->
+            <div class="col-md-8">
+                <div class="form-group row">
+                    <label for="veiculeName" class="col-sm-3 col-form-label">Nome do Veículo</label>
+                    <div class="col-sm-9">
+                        <input type="text" id="veiculeName" name="name" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="form-group row mt-3">
+                    <label for="veiculeType" class="col-sm-3 col-form-label">Tipo de Veículo</label>
+                    <div class="col-sm-9">
+                        <select id="veiculeType" name="type" class="form-control" required>
+                            <option value="ligeiro">Ligeiro</option>
+                            <option value="carrinha">Carrinha</option>
+                            <option value="autocarro">Autocarro</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group row mt-3">
+                    <label for="veiculePlate" class="col-sm-3 col-form-label">Matrícula</label>
+                    <div class="col-sm-9">
+                        <input type="text" id="veiculePlate" name="plate" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="form-group row mt-3">
+                    <label for="veiculeKilometers" class="col-sm-3 col-form-label">Kilometros</label>
+                    <div class="col-sm-9">
+                        <input type="text" id="veiculeKilometers" name="kilometers" class="form-control" required />
+                    </div>
+                </div>
+
+                <div class="form-group mt-4">
+                    <button type="submit" class="btn btn-primary">Criar Veículo</button>
+                </div>
+            </div>
+
+            <!-- Coluna para a imagem -->
+            <div class="col-md-4 d-flex flex-column align-items-center">
+                <img src="~/images/default-veicule.png" alt="Imagem do Veículo" id="imagePreview" style="width: 150px; height: 150px; object-fit: cover; border: 1px solid #ccc;" />
+                <input type="file" id="veiculeImage" name="imageFile" class="form-control-file d-none" accept="image/*" onchange="previewImage(event)" />
+                <button type="button" class="btn btn-secondary mt-2" onclick="document.getElementById('veiculeImage').click()">Adicionar Imagem</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Seção para Criar Novo Motorista -->
+    <h3 class="mt-5">Adicionar Motorista</h3>
+    <form asp-action="CreateDriver" method="post" class="mt-2">
+        <div class="form-group">
+            <label for="driverName">Nome do Motorista</label>
+            <input type="text" id="driverName" name="name" class="form-control" required />
+        </div>
+        <div class="form-group mt-2">
+            <label for="driverTelefone">Telefone do Motorista</label>
+            <input type="text" id="driverTelefone" name="telefone" class="form-control" required />
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Adicionar Motorista</button>
+    </form>
+
+    <!-- Seção para Listar e Remover Veículos -->
+    <h3 class="mt-5">Veículos Existentes</h3>
+    <ul class="list-group mt-3">
+        @foreach (var veicule in Model.Veicules)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <img src="@veicule.Image" alt="Imagem do Veículo" width="50" height="50" class="me-3" />
+                @veicule.Name - @veicule.Type - @veicule.Plate
+                <button type="button"
+                        class="btn btn-danger btn-sm delete-button"
+                        data-id="@veicule.Id"
+                        data-name="@veicule.Name"
+                        data-plate="@veicule.Plate"
+                        data-type="veicule"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal">
+                    Remover
+                </button>
+            </li>
+        }
+    </ul>
+
+    <!-- Seção para Listar e Remover Motoristas -->
+    <h3 class="mt-5">Motoristas Existentes</h3>
+    <ul class="list-group mt-3">
+        @foreach (var driver in Model.Drivers)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                @driver.Name - @driver.Telefone
+                <button type="button"
+                        class="btn btn-danger btn-sm delete-button"
+                        data-id="@driver.Id"
+                        data-name="@driver.Name"
+                        data-type="driver"
+                        data-bs-toggle="modal"
+                        data-bs-target="#confirmDeleteModal">
+                    Remover
+                </button>
+            </li>
+        }
+    </ul>
+
+    <!-- Modal de Confirmação -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Exclusão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza de que deseja excluir <strong id="itemToDelete"></strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="confirmDeleteButton" class="btn btn-danger">Sim, Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Função para pré-visualizar a imagem ao carregar um arquivo
+        function previewImage(event) {
+            var reader = new FileReader();
+            reader.onload = function () {
+                var output = document.getElementById('imagePreview');
+                output.src = reader.result; // Exibe a imagem selecionada
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        // Caso o usuário clique na imagem para abrir o campo de seleção de arquivo
+        document.getElementById('imagePreview').onclick = function () {
+            document.getElementById('veiculeImage').click();
+        };
+
+        // Script para manipular o modal de confirmação de exclusão
+        document.addEventListener('DOMContentLoaded', function () {
+            let itemId, itemType;
+
+            // Captura o clique no botão de remoção
+            document.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', function () {
+                    itemId = this.getAttribute('data-id');
+                    itemType = this.getAttribute('data-type');
+                    const itemName = this.getAttribute('data-name');
+                    const itemPlate = this.getAttribute('data-plate');
+                    const itemDescription = itemType === 'veicule' ? `${itemName} (${itemPlate})` : itemName;
+
+                    // Define o texto do modal com o nome/descrição do item a ser excluído
+                    document.getElementById('itemToDelete').textContent = itemDescription;
+                });
+            });
+
+            // Quando o botão "Sim, Excluir" é clicado no modal
+            document.getElementById('confirmDeleteButton').addEventListener('click', function () {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = itemType === 'veicule' ? '/Veicule/DeleteVeicule' : '/Veicule/DeleteDriver';
+
+                // Adiciona o token CSRF para proteção contra ataques CSRF
+                const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                const csrfField = document.createElement('input');
+                csrfField.type = 'hidden';
+                csrfField.name = '__RequestVerificationToken';
+                csrfField.value = csrfToken;
+                form.appendChild(csrfField);
+
+                // Adiciona o ID do item no formulário
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = 'id';
+                hiddenField.value = itemId;
+                form.appendChild(hiddenField);
+
+                document.body.appendChild(form);
+                form.submit(); // Envia o formulário
+            });
+        });
+    </script>
+}

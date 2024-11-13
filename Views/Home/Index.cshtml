@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-7 mt-5">
+        <div class="mb-5">
+            <button id="veicule-request" type="button" class="w-100 btn btn-lg btn-primary"
+                    onclick="redirectToVeiculeRequest()">
+                Requisitar Veículo
+            </button>
+        </div>
+        <div class="mb-5">
+            <button id="room-request" type="button" class="w-100 btn btn-lg btn-primary"
+                    onclick="redirectToRoomRequest()">
+                Requisitar Sala
+            </button>
+        </div>
+        <div class="mb-5">
+            <button id="equipment-request" type="button" class="w-100 btn btn-lg btn-primary"
+                    onclick="redirectToEquipmentRequest()">
+                Requisitar Equipamento
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function getUserRole() {
+            const response = await fetch('/Home/GetUserRole');
+            return await response.text();
+        }
+
+        async function redirectToVeiculeRequest() {
+            const role = await getUserRole();
+            if (role === 'Admin') {
+                location.href = '@Url.Action("VeiculeAdmin", "Veicule")';
+            } else if (role === 'GestorVeiculos') {
+                location.href = '@Url.Action("VeiculeRequest", "Veicule")';
+            } else {
+                location.href = '@Url.Action("VeiculeAvailability", "veicule")'; // Para utilizadores não autorizados
+            }
+        }
+
+        async function redirectToRoomRequest() {
+            const role = await getUserRole();
+            if (role === 'Admin') {
+                location.href = '@Url.Action("RoomAdmin", "Room")';
+            } else if (role === 'GestorSalas') {
+                location.href = '@Url.Action("RoomRequest", "Room")';
+            } else  {
+                location.href = '@Url.Action("RoomAvailability", "Room")'; // Para utilizadores não autorizados
+            } 
+        }
+
+        async function redirectToEquipmentRequest() {
+            const role = await getUserRole();
+            if (role === 'Admin') {
+                location.href = '@Url.Action("EquipmentAdmin", "Equipment")';
+            } else if (role === 'GestorEquipamentos') {
+                location.href = '@Url.Action("EquipmentRequest", "Equipment")';
+            } else {
+                location.href = '@Url.Action("EquipmentAvailability", "Equipment")'; // Para utilizadores não autorizados
+            }
+        }
+    </script>
+}
+
+               
